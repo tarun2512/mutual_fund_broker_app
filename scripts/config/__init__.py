@@ -90,7 +90,7 @@ class _Security(BaseSettings):
     MAX_LOGIN_ATTEMPTS: int = Field(default=10)
     REFRESH_TOKEN_DURATION: int = Field(default=168)
     LOCK_OUT_TIME_MINS: int = Field(default=2880)
-    RAPID_API_KEY: str = Field(default="3f0431550cmsh20b4f0436520890p1b4958jsn8a32be0b0618")
+    RAPID_API_KEY: str = Field(default="")
     HTTP_FLAG: bool = Field(default=True) in ["True", "true", True]
 
 
