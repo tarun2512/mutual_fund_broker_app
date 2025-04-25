@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mutual Fund Brokerage Platform</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .fund-card {
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        .fund-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+        .portfolio-chart {
+            height: 400px;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+        }
+        .loading-spinner {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid py-4">
+        <div class="row mb-4">
+            <div class="col">
+                <h1 class="display-4">Mutual Fund Brokerage</h1>
+                <p class="lead">Manage your mutual fund investments</p>
+            </div>
+                <div class="col text-end align-self-center">
+        <button id="logoutBtn" class="btn btn-danger">Logout</button>
+    </div>
+        </div>
+
+        <!-- Add Funds Section -->
+        <div class="row mb-5">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header bg-primary text-white">
+                        <h3>Add Funds</h3>
+                    </div>
+                    <div class="card-body">
+                        <form id="addFundsForm">
+                            <div class="mb-3">
+                                <label for="fundFamily" class="form-label">Fund Family</label>
+                                <select class="form-select" id="fundFamily" required>
+                                    <option value="" selected disabled>Select a fund family</option>
+                                    <!-- Options will be loaded dynamically -->
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label for="schemeName" class="form-label">Scheme Name</label>
+                                <select class="form-select" id="schemeName" required>
+                                    <option value="" selected disabled>Select a scheme</option>
+                                    <!-- Options will be loaded dynamically -->
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label for="amount" class="form-label">Amount ($)</label>
+                                <input type="number" class="form-control" id="amount" min="0" step="0.01" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="transactionDate" class="form-label">Transaction Date</label>
+                                <input type="date" class="form-control" id="transactionDate" required>
+                            </div>
+                            <button type="submit" class="btn btn-primary">
+                                <span class="spinner-border spinner-border-sm loading-spinner" id="addFundsSpinner"></span>
+                                Add Funds
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header bg-success text-white">
+                        <h3>Current Portfolio</h3>
+                    </div>
+                    <div class="card-body">
+                        <div id="fundsList" class="list-group">
+                            <!-- Funds will be loaded here -->
+                            <div class="text-center py-4">
+                                <div class="spinner-border text-primary" id="fundsSpinner"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Hourly Portfolio Data Section -->
+        <div class="row">
+            <div class="col">
+                <div class="card">
+                    <div class="card-header bg-warning text-dark">
+                        <h3>Portfolio Performance</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="portfolio-chart d-flex justify-content-center align-items-center" id="portfolioChart">
+                            <div class="spinner-border text-primary" id="chartSpinner"></div>
+                        </div>
+                        <div class="mt-3">
+                            <button class="btn btn-outline-primary" id="refreshChart">
+                                <span class="spinner-border spinner-border-sm loading-spinner" id="refreshSpinner"></span>
+                                Refresh Data
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notifications -->
+    <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 11">
+        <div id="apiToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="toast-header">
+                <strong class="me-auto">Notification</strong>
+                <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+            <div class="toast-body" id="toastMessage"></div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        // Initialize Toast
+        // Logout Functionality
+document.getElementById('logoutBtn').addEventListener('click', async () => {
+    try {
+        const response = await fetch('/user/logout', {
+            method: 'POST',
+            credentials: 'include', // important if you use cookies for auth
+        });
+
+        if (response.ok) {
+            // Optional: clear localStorage/sessionStorage
+            localStorage.clear();
+            sessionStorage.clear();
+
+            // Redirect to login page
+            window.location.href = '/login';
+        } else {
+            alert('Logout failed. Please try again.');
+        }
+    } catch (error) {
+        console.error('Logout error:', error);
+        alert('An error occurred during logout.');
+    }
+});
+
+        const apiToast = new bootstrap.Toast(document.getElementById('apiToast'));
+
+        // Global Chart Reference
+        let portfolioChart = null;
+        let fundFamilies = []; // Store loaded fund families
+
+        // Display notification
+        function showNotification(message, isError = false) {
+            const toast = document.getElementById('apiToast');
+            const toastMessage = document.getElementById('toastMessage');
+
+            toastMessage.textContent = message;
+            if (isError) {
+                toast.classList.add('bg-danger', 'text-white');
+            } else {
+                toast.classList.remove('bg-danger', 'text-white');
+            }
+            apiToast.show();
+        }
+
+        // API Call Helper
+        async function callApi(endpoint, method = 'GET', data = null) {
+            const options = {
+                method: method,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+                }
+            };
+
+            if (data) {
+                options.body = JSON.stringify(data);
+            }
+
+            try {
+                const response = await fetch(endpoint, options);
+                if (!response.ok) {
+                    throw new Error(`API request failed: ${response.status}`);
+                }
+                return await response.json();
+            } catch (error) {
+                console.error('API Error:', error);
+                showNotification(error.message, true);
+                throw error;
+            }
+        }
+            let fundData = [];
+
+    // Fetch the data from API
+    async function loadFundFamiliesDropdown() {
+        const dropdown = document.getElementById('fundFamily');
+        const spinner = document.getElementById('addFundsSpinner');
+        spinner.style.display = 'inline-block';
+
+        try {
+            mutual_fund_data = await callApi('/funds/fetch_mutual_fund_family_data');
+            fundData = mutual_fund_data.data;
+            // Get unique fund families
+            const uniqueFamilies = [...new Set(fundData.map(item => item.fund_family))];
+
+            // Clear existing options except the first
+            while (dropdown.options.length > 1) {
+                dropdown.remove(1);
+            }
+
+            // Populate fund family dropdown
+            uniqueFamilies.forEach(family => {
+                const option = document.createElement('option');
+                option.value = family;
+                option.textContent = family;
+                dropdown.appendChild(option);
+            });
+
+        } catch (error) {
+            dropdown.innerHTML = '<option value="" disabled>Failed to load fund families</option>';
+        } finally {
+            spinner.style.display = 'none';
+        }
+    }
+
+    // Load schemes based on selected fund family
+    document.getElementById('fundFamily').addEventListener('change', function () {
+        const selectedFamily = this.value;
+        const schemeDropdown = document.getElementById('schemeName');
+
+        // Clear existing options except the first
+        while (schemeDropdown.options.length > 1) {
+            schemeDropdown.remove(1);
+        }
+
+        // Filter and add scheme names
+        const matchingSchemes = fundData.filter(item => item.fund_family === selectedFamily);
+
+        matchingSchemes.forEach(scheme => {
+            const option = document.createElement('option');
+            option.value = scheme.scheme_code;
+            option.textContent = scheme.scheme_name;
+            schemeDropdown.appendChild(option);
+        });
+    });
+
+    // Initial call
+    loadFundFamiliesDropdown();
+
+            // 1. Add Funds API
+document.getElementById('addFundsForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const spinner = document.getElementById('addFundsSpinner');
+    spinner.style.display = 'inline-block';
+
+    const fundFamilySelect = document.getElementById('fundFamily');
+    const schemeSelect = document.getElementById('schemeName');
+    const fundDataToSend = {
+                user_id: localStorage.getItem('user_id'), // Assuming userId is stored in localStorage
+        amount: parseFloat(document.getElementById('amount').value),
+        mutual_fund_family: fundFamilySelect.options[fundFamilySelect.selectedIndex].text,
+        scheme_name: schemeSelect.options[schemeSelect.selectedIndex].text, // optional, but good to include
+        scheme_code: schemeSelect.value,  // this is the scheme_code
+        transaction_date: document.getElementById('transactionDate').value
+    };
+
+    try {
+        const result = await callApi('/funds/add_funds', 'POST', fundDataToSend);
+        showNotification('Funds added successfully!');
+        loadFunds(); // Reload the funds list
+        e.target.reset(); // Reset form
+        document.getElementById('fundFamily').selectedIndex = 0;
+        document.getElementById('schemeName').selectedIndex = 0;
+    } catch (error) {
+        // Error is already handled in callApi
+    } finally {
+        spinner.style.display = 'none';
+    }
+});
+
+        // Render fund family cards
+        function renderFundFamilyCards() {
+            const container = document.getElementById('fundFamilyContainer');
+            container.innerHTML = '';
+
+            fundFamilies.forEach(family => {
+                const familyCard = document.createElement('div');
+                familyCard.className = 'col-md-4 mb-4';
+                familyCard.innerHTML = `
+                    <div class="card fund-card h-100">
+                        <div class="card-body">
+                            <h5 class="card-title">${family.name}</h5>
+                            <p class="card-text">${family.description || 'No description available'}</p>
+                            <ul class="list-group list-group-flush">
+                                <li class="list-group-item">Funds: ${family.fundCount}</li>
+                                <li class="list-group-item">AUM: $${(family.aum / 1000000).toFixed(2)}M</li>
+                                <li class="list-group-item">Avg. Expense Ratio: ${family.avgExpenseRatio.toFixed(2)}%</li>
+                            </ul>
+                        </div>
+                        <div class="card-footer bg-transparent">
+                            <button class="btn btn-sm btn-outline-primary">View Funds</button>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(familyCard);
+            });
+        }
+
+  // 2. Fetch Funds API - Updated to match your API response
+async function loadFunds() {
+    const container = document.getElementById('fundsList');
+    const spinner = document.getElementById('fundsSpinner');
+
+    container.innerHTML = '';
+    spinner.style.display = 'block';
+
+    try {
+        const user_id = localStorage.getItem('user_id');
+        if (!user_id) {
+            throw new Error('User not authenticated');
+        }
+
+        const response = await fetch(`/funds/fetch_funds?user_id=${encodeURIComponent(user_id)}`, {
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('authToken') || ''}`
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error(`API request failed with status ${response.status}`);
+        }
+
+        const funds = await response.json();
+
+
+        if (!funds.date || funds.date === 0) {
+            container.innerHTML = '<div class="alert alert-info">No funds found in your portfolio</div>';
+            return;
+        }
+
+        container.innerHTML = ''; // Clear loading spinner
+
+        funds.data.forEach(fund => {
+            const investValue = fund.units_held * fund.average_nav_price;
+            const currentValue = fund.units_held * fund.current_nav_price;
+            const returnPercentage = investValue > 0 ?
+                ((currentValue - investValue) / investValue * 100) : 0;
+
+            const fundElement = document.createElement('div');
+            fundElement.className = 'list-group-item list-group-item-action';
+            fundElement.innerHTML = `
+                <div class="d-flex w-100 justify-content-between">
+                    <h5 class="mb-1">${fund.scheme_name}</h5>
+                    <small>${fund.mutual_fund_family}</small>
+                </div>
+                <div class="d-flex justify-content-between mt-2">
+                    <span>Units: ${fund.units_held.toFixed(4)}</span>
+                    <span>Avg. NAV: ₹${fund.average_nav_price.toFixed(4)}</span>
+                    <span>Cur. NAV: ₹${fund.current_nav_price.toFixed(4)}</span>
+                </div>
+                <div class="d-flex justify-content-between mt-2">
+                    <span>Invested: ₹${investValue.toFixed(2)}</span>
+                    <span>Current: ₹${currentValue.toFixed(2)}</span>
+                    <span>Return: <span class="${returnPercentage >= 0 ? 'text-success' : 'text-danger'}">${returnPercentage.toFixed(2)}%</span></span>
+                </div>
+            `;
+            container.appendChild(fundElement);
+        });
+
+    } catch (error) {
+        console.error('Error loading funds:', error);
+        container.innerHTML = `
+            <div class="alert alert-danger">
+                Failed to load funds: ${error.message}
+                <button class="btn btn-sm btn-warning mt-2" onclick="loadFunds()">Retry</button>
+            </div>
+        `;
+    } finally {
+        spinner.style.display = 'none';
+    }
+}
+
+// Initialize when page loads
+document.addEventListener('DOMContentLoaded', loadFunds);
+
+        // 4. Fetch Hourly Portfolio Data API and Chart
+
+async function loadPortfolioChart() {
+    const chartContainer = document.getElementById('portfolioChart');
+    const spinner = document.getElementById('chartSpinner');
+
+    chartContainer.innerHTML = '';
+    spinner.style.display = 'block';
+
+    const user_id = localStorage.getItem('user_id');
+
+    try {
+        const response = await callApi(`/funds/fetch_hourly_portfolio_data?user_id=${user_id}`);
+
+        const labels = [];
+        const values = [];
+
+        // Iterate over timestamps
+        Object.entries(response).forEach(([timestamp, schemes]) => {
+            let totalValue = 0;
+
+            // Sum values of all schemes at that timestamp
+            Object.values(schemes).forEach(scheme => {
+                totalValue += scheme.value || 0;
+            });
+
+            labels.push(new Date(timestamp).toLocaleTimeString());
+            values.push(totalValue);
+        });
+
+        // Destroy previous chart if it exists
+        if (portfolioChart) {
+            portfolioChart.destroy();
+        }
+
+        // Create canvas and add to container
+        const canvas = document.createElement('canvas');
+        canvas.style.height = "300px"; // optional fixed height
+        chartContainer.appendChild(canvas);
+
+        // Create new chart
+        portfolioChart = new Chart(canvas, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Portfolio Value ($)',
+                    data: values,
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                    tension: 0.1,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: false
+                    }
+                }
+            }
+        });
+
+    } catch (error) {
+        chartContainer.innerHTML = '<div class="alert alert-danger">Failed to load portfolio data</div>';
+    } finally {
+        spinner.style.display = 'none';
+    }
+}
+
+
+        // Refresh chart button
+document.getElementById('refreshChart').addEventListener('click', async () => {
+    const spinner = document.getElementById('refreshSpinner');
+    spinner.style.display = 'inline-block';
+    await loadPortfolioChart();
+    spinner.style.display = 'none';
+});
+document.addEventListener('DOMContentLoaded', () => {
+    loadPortfolioChart();
+});
+
+        // Initialize all data on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            loadFundFamiliesDropdown(); // Load dropdown first
+            loadFunds();
+            loadPortfolioChart();
+        });
+    </script>
+</body>
+</html>

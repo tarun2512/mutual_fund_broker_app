@@ -1,0 +1,20 @@
+deployment:
+  environmentVar:
+    - name: APP_NAME
+      value: "assignment"
+    - name: MODULE_NAME
+      value: "assignment"
+    - name: PORT
+      value: "5112"
+    - name: LOG_LEVEL
+      value: "INFO"
+    - name: BASE_DIRECTORY
+      value: "/code/data"
+    - name: MOUNT_DIR
+      value: "/assignment"
+    - name: MONGO_URI
+      value: ""
+    - name: REDIS_URI
+      value: ""
+    - name: RAPID_API_KEY
+      value: ""

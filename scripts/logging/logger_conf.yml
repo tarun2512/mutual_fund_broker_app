@@ -1,0 +1,11 @@
+logger:
+  name: assignment
+  level: DEBUG
+  handlers:
+    - type: RotatingFileHandler
+      file_path: logs/
+      max_bytes: 100000000
+      back_up_count: 5
+
+    - type: StreamHandler
+      name: assignment
