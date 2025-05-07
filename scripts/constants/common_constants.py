@@ -28,6 +28,7 @@ class DefaultResponseMessages:
     VALUE_FAILED = "failed"
     VALUE_UNDEFINED = "undefined"
 
+
 class Secrets:
     LOCK_OUT_TIME_MINS = 30
     leeway_in_mins = 10

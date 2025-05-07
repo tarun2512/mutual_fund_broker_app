@@ -22,16 +22,16 @@ def fetch_nav_value():
         logger.error(f"failed to fetch nav value for scheme {str(e)}")
 
 
-def update_mutual_fund_family():
+async def update_mutual_fund_family():
     """
     This function updates the mutual fund family details.
     """
 
     try:
         mutual_fund_data_con = MutualFundData(mongo_client=mongo_client)
-        records = mutual_fund_data_con.find({})
+        records = await mutual_fund_data_con.find({})
         if not records:
             records = fetch_nav_value()
-            mutual_fund_data_con.insert_many(records)
+            await mutual_fund_data_con.insert_many(records)
     except Exception as e:
         logger.error(f"Failed to add MutualFundData: {str(e)}")

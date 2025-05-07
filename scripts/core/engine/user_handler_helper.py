@@ -19,7 +19,7 @@ class UserHandlerHelper:
         self.max_age_in_mins = Security.COOKIE_MAX_AGE_IN_MINS
         self.common_utils = CommonUtils()
 
-    def reset_login_attempts(self, user_record, reset=True):
+    async def reset_login_attempts(self, user_record, reset=True):
         user_id = user_record.get("user_id")
         try:
             user_locked = False
@@ -33,12 +33,10 @@ class UserHandlerHelper:
                 failed_login = _t_
                 if failed_attempts >= Security.MAX_LOGIN_ATTEMPTS:
                     user_locked = True
-                if (last_failed_login
-                    and (_t_ - last_failed_login) < 10
-                ):
+                if last_failed_login and (_t_ - last_failed_login) < 10:
                     raise TooManyRequestsError(DefaultExceptionsCode.DE004)
 
-            self.user_con.update_one(
+            await self.user_con.update_one(
                 query={"user_id": user_id},
                 data={
                     "failed_attempts": failed_attempts,
@@ -52,16 +50,18 @@ class UserHandlerHelper:
         except Exception as e:
             logger.exception(str(e))
 
-    def validate_password(self, password, user_record):
+    async def validate_password(self, password, user_record):
         if not user_record.get("password") or user_record.get("password") == "null":
-            self.reset_login_attempts(user_record=user_record, reset=False)
+            await self.reset_login_attempts(user_record=user_record, reset=False)
             raise InvalidPasswordError(msg=DefaultExceptionsCode.DEIL)
-        if not bcrypt.checkpw(password.encode("utf-8"), user_record["password"].encode("utf-8")):
-            self.reset_login_attempts(user_record=user_record, reset=False)
+        if not bcrypt.checkpw(
+            password.encode("utf-8"), user_record["password"].encode("utf-8")
+        ):
+            await self.reset_login_attempts(user_record=user_record, reset=False)
             raise InvalidPasswordError(msg=DefaultExceptionsCode.DEIP)
         return True
 
-    def set_login_token(self, response, user_record, client_ip, lockout_time):
+    async def set_login_token(self, response, user_record, client_ip, lockout_time):
         login_token = self.common_utils.create_token(
             user_id=user_record.get("user_id"),
             ip=client_ip,
@@ -77,10 +77,9 @@ class UserHandlerHelper:
             secure=Security.SECURE_COOKIE,
         )
         response.headers["login-token"] = login_token
-        return login_token
 
     @staticmethod
-    def set_user_id(response, user_id):
+    async def set_user_id(response, user_id):
         response.set_cookie(
             "user_id",
             user_id,
@@ -94,4 +93,3 @@ class UserHandlerHelper:
             secure=Security.SECURE_COOKIE,
         )
         return response
-

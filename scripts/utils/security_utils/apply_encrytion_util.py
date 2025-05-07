@@ -3,8 +3,7 @@ from datetime import datetime, timedelta
 
 from scripts.constants.common_constants import Secrets
 from scripts.db.redis_connection import login_db
-from scripts.utils.security_utils.jwt_util import JWT
-
+from scripts.utils.common_utils import jwt
 
 
 def create_token(user_id, ip, token, age=Secrets.LOCK_OUT_TIME_MINS, login_token=None):

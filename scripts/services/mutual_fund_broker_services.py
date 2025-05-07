@@ -19,22 +19,27 @@ async def add_funds(request_data: AddFunds):
     """
     try:
         fund_broker_handler_handler = MutualFundBrokerHandler()
-        fund_broker_handler_handler.add_funds_to_portfolio(request_data)
+        await fund_broker_handler_handler.add_funds_to_portfolio(request_data)
         return DefaultSuccessResponse(message="Funds Added Successfully", data={})
     except Exception as e:
         logger.error(f"failed to add funds to portfolio, {str(e)}")
         return DefaultFailureResponse(message="Failed to add funds to portfolio")
+
 
 @fund_router.get(APIEndpoints.api_fetch_funds)
 async def fetch_user_portfolio(user_id: str):
     """Return open‑ended schemes for a chosen fund family."""
     try:
         fund_broker_handler_handler = MutualFundBrokerHandler()
-        records = fund_broker_handler_handler.fetch_user_portfolio(user_id=user_id)
-        return DefaultSuccessResponse(message="Portfolio fetched successfully", data=records)
+        records = await fund_broker_handler_handler.fetch_user_portfolio(
+            user_id=user_id
+        )
+        return DefaultSuccessResponse(
+            message="Portfolio fetched successfully", data=records
+        )
     except Exception as e:
         logger.error(f"failed to fetch mutual_fund_data {str(e)}")
-        return DefaultFailureResponse(message="Failed to fetch portfolio", data = [])
+        return DefaultFailureResponse(message="Failed to fetch portfolio", data=[])
 
 
 @fund_router.get(APIEndpoints.api_fetch_mutual_fund_family_data)
@@ -42,17 +47,22 @@ async def fetch_mutual_fund_family_data():
     """Return open‑ended schemes for a chosen fund family."""
     try:
         fund_broker_handler_handler = MutualFundBrokerHandler()
-        records = fund_broker_handler_handler.fetch_mutual_fund_family_data()
-        return DefaultSuccessResponse(message="Mutual Fund Family Data fetched successfully", data=records)
+        records = await fund_broker_handler_handler.fetch_mutual_fund_family_data()
+        return DefaultSuccessResponse(
+            message="Mutual Fund Family Data fetched successfully", data=records
+        )
     except Exception as e:
         logger.error(f"failed to fetch mutual_fund_data {str(e)}")
-        return DefaultFailureResponse(message="Failed to fetch Mutual Fund Family Data", data = [])
+        return DefaultFailureResponse(
+            message="Failed to fetch Mutual Fund Family Data", data=[]
+        )
+
 
 @fund_router.get(APIEndpoints.api_fetch_hourly_portfolio_data)
 async def fetch_hourly_portfolio_data(user_id: str):
     """Return open‑ended schemes for a chosen fund family."""
     try:
         fund_broker_handler_handler = MutualFundBrokerHandler()
-        return fund_broker_handler_handler.fetch_hourly_portfolio_data(user_id)
+        return await fund_broker_handler_handler.fetch_hourly_portfolio_data(user_id)
     except Exception as e:
         logger.error(f"failed to fetch mutual_fund_data {str(e)}")

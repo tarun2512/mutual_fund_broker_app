@@ -81,7 +81,10 @@ def get_logger():
     __logger__ = logging.getLogger("ilens")
     add_logging_level("QTRACE", logging.DEBUG - 5)
     __logger__.setLevel(logging_config["level"].upper())
-    log_formatter = "%(asctime)s - %(levelname)-6s - [%(threadName)5s:%(funcName)5s():" + "%(lineno)s] - %(message)s"
+    log_formatter = (
+        "%(asctime)s - %(levelname)-6s - [%(threadName)5s:%(funcName)5s():"
+        + "%(lineno)s] - %(message)s"
+    )
     time_format = "%Y-%m-%d %H:%M:%S"
     file_path = PathToStorage.LOGS_MODULE_PATH
     formatter = logging.Formatter(log_formatter, time_format)
@@ -92,7 +95,9 @@ def get_logger():
                 os.makedirs(file_path)
             log_file = os.path.join(file_path, f"{logging_config['name']}.log")
             temp_handler = RotatingFileHandler(
-                log_file, maxBytes=each_handler["max_bytes"], backupCount=each_handler["back_up_count"]
+                log_file,
+                maxBytes=each_handler["max_bytes"],
+                backupCount=each_handler["back_up_count"],
             )
             temp_handler.setFormatter(formatter)
         elif each_handler["type"] in ["SocketHandler"]:

@@ -6,6 +6,7 @@ templates = Jinja2Templates(directory="templates")
 
 frontend_router = APIRouter()
 
+
 @frontend_router.get("/login", response_class=HTMLResponse)
 async def login_page(request: Request):
     return templates.TemplateResponse(
@@ -17,35 +18,54 @@ async def login_page(request: Request):
             "api_reset_url": "/user/reset_password",
             "route_register": "/register",
             "route_reset_password": "/reset_password",
-            "route_funds": "/funds"
-        }
+            "route_funds": "/funds",
+        },
     )
+
 
 @frontend_router.get("/register", response_class=HTMLResponse)
 async def register_page(request: Request):
-    return templates.TemplateResponse("auth/register.html", {"request": request,             "api_login_url": "/user/login",  # Explicit URL
+    return templates.TemplateResponse(
+        "auth/register.html",
+        {
+            "request": request,
+            "api_login_url": "/user/login",  # Explicit URL
             "api_register_url": "/user/create_user",
             "api_reset_url": "/user/reset_password",
-                                                             "route_register": "/register",
-                                                             "route_reset_password": "/reset_password",
-                                                             "route_login": "/login"
+            "route_register": "/register",
+            "route_reset_password": "/reset_password",
+            "route_login": "/login",
+        },
+    )
 
-                                                             })
 
 @frontend_router.get("/reset_password", response_class=HTMLResponse)
 async def reset_password_page(request: Request):
-    return templates.TemplateResponse("auth/reset_password.html", {"request": request,  "api_login_url": "/user/login",  # Explicit URL
+    return templates.TemplateResponse(
+        "auth/reset_password.html",
+        {
+            "request": request,
+            "api_login_url": "/user/login",  # Explicit URL
             "api_register_url": "/user/create_user",
             "api_reset_url": "/user/reset_password",
-                                                             "route_register": "/register",
-                                                             "route_reset_password": "/reset_password",
-                                                             "route_login": "/login"})
+            "route_register": "/register",
+            "route_reset_password": "/reset_password",
+            "route_login": "/login",
+        },
+    )
+
 
 @frontend_router.get("/funds", response_class=HTMLResponse)
-async def reset_password_page(request: Request):
-    return templates.TemplateResponse("auth/funds.html", {"request": request,  "api_login_url": "/user/login",  # Explicit URL
+async def funds_page(request: Request):
+    return templates.TemplateResponse(
+        "auth/funds.html",
+        {
+            "request": request,
+            "api_login_url": "/user/login",  # Explicit URL
             "api_register_url": "/user/create_user",
             "api_reset_url": "/user/reset_password",
-                                                             "route_register": "/register",
-                                                             "route_reset_password": "/reset_password",
-                                                             "route_login": "/login"})
+            "route_register": "/register",
+            "route_reset_password": "/reset_password",
+            "route_login": "/login",
+        },
+    )

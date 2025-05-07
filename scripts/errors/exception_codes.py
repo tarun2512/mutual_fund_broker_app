@@ -13,7 +13,9 @@ class UserExceptions:
     FAILED_TO_SAVE = "Failed to save the user details"
     USER_INACTIVE = "User Inactive, please contact administrator"
     EMAIL_SEND_FAIL = "Failed to reset password mail, please contact administrator"
-    INCORRECT_USERID = "Failed. Incorrect user id or user id doesn’t exist. Please try again."
+    INCORRECT_USERID = (
+        "Failed. Incorrect user id or user id doesn’t exist. Please try again."
+    )
     USER_NOT_EXIST = "User does not Exists"
     KEYCLOAK_CONNECTION_ERROR = "Failed to connect to keycloak"
     KEYCLOAK_USER_CREATION_ERROR = "Failed to create user in keycloak"

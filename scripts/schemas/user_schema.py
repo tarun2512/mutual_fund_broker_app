@@ -1,6 +1,7 @@
 from pydantic import BaseModel, EmailStr, constr, validator, Field
 from typing import Optional
 
+
 class UserRegister(BaseModel):
     user_id: Optional[str] = ""
     username: constr(min_length=3, max_length=50)
@@ -13,9 +14,9 @@ class UserRegister(BaseModel):
     updated_on: Optional[str] = 0
     failed_attempts: Optional[int] = Field(default=0)
 
-    @validator('username')
+    @validator("username")
     def username_alphanumeric(cls, v):
-        assert v.isalnum(), 'must be alphanumeric'
+        assert v.isalnum(), "must be alphanumeric"
         return v
 
     class Config:
@@ -26,9 +27,10 @@ class UserRegister(BaseModel):
                 "password": "strongpassword",
                 "password_confirm": "strongpassword",
                 "first_name": "John",
-                "last_name": "Doe"
+                "last_name": "Doe",
             }
         }
+
 
 class LoginRequest(BaseModel):
     username: str

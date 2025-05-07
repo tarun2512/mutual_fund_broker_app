@@ -3,7 +3,7 @@ from typing import Any, Optional
 from pydantic import BaseModel
 
 from scripts.constants.db_constants import DatabaseNames, CollectionNames
-from scripts.utils.mongo_util import MongoCollectionBaseClass
+from scripts.utils.mongo_util import AsyncMongoCollectionBaseClass
 
 
 class UserCollectionKeys:
@@ -20,12 +20,16 @@ class UserPortfolioHourlySchema(BaseModel):
     investments: Optional[Any] = None
 
 
-class UserPortfolioHourly(MongoCollectionBaseClass):
+class UserPortfolioHourly(AsyncMongoCollectionBaseClass):
     def __init__(self, mongo_client):
-        super().__init__(mongo_client, database=DatabaseNames.mutual_fund_db, collection=CollectionNames.collection_user_portfolio_hourly)
+        super().__init__(
+            mongo_client,
+            database=DatabaseNames.mutual_fund_db,
+            collection=CollectionNames.collection_user_portfolio_hourly,
+        )
         self.key_user_id = UserCollectionKeys.KEY_USER_ID
 
-    def update_user_portfolio_hourly(self, query, data):
+    async def update_user_portfolio_hourly(self, query, data):
         """
         The following function will update target details in rule_targets collections
         :param self:
@@ -33,15 +37,15 @@ class UserPortfolioHourly(MongoCollectionBaseClass):
         :param data:
         :return:
         """
-        return self.update_one(query=query, data=data, upsert=True)
+        return await self.update_one(query=query, data=data, upsert=True)
 
-    def find_user_portfolio_hourly(self, user_id=None, scheme_code=None):
+    async def find_user_portfolio_hourly(self, user_id=None, scheme_code=None):
         query = {}
         if user_id:
             query[self.key_user_id] = user_id
         if scheme_code:
             query["scheme_code"] = scheme_code
-        user = self.find(query=query)
+        user = await self.find(query=query)
         if user:
-            return user
-        return {}
+            return list(user)
+        return []

@@ -25,9 +25,13 @@ class UpdateHourlyPortfolio:
     def get_nav_for_scheme(self, scheme_code):
         try:
             with httpx.Client() as client:
-                response = client.get(self.rapid_api_url, params={"Scheme_Code": scheme_code}, headers=self.rapid_api_headers)
+                response = client.get(
+                    self.rapid_api_url,
+                    params={"Scheme_Code": scheme_code},
+                    headers=self.rapid_api_headers,
+                )
                 response.raise_for_status()
-                nav_value = response.json()[0].get('Net_Asset_Value')
+                nav_value = response.json()[0].get("Net_Asset_Value")
                 return nav_value
         except Exception as e:
             logger.error(f"failed to fetch nav value for scheme {str(e)}")
@@ -37,20 +41,24 @@ class UpdateHourlyPortfolio:
             users = self.user_con.distinct("user_id")
 
             for user_id in users:
-                user_portfolio = list(self.user_portfolio_con.find({"user_id": user_id}))
+                user_portfolio = list(
+                    self.user_portfolio_con.find({"user_id": user_id})
+                )
 
                 investments = []
                 total_value = 0
 
                 for scheme in user_portfolio:
-                    nav = self.get_nav_for_scheme(scheme['scheme_code'])
-                    value = scheme['units_held'] * nav
+                    nav = self.get_nav_for_scheme(scheme["scheme_code"])
+                    value = scheme["units_held"] * nav
 
-                    investments.append({
-                        "scheme_code": scheme['scheme_code'],
-                        "nav": round(nav, 4),
-                        "value": round(value, 2)
-                    })
+                    investments.append(
+                        {
+                            "scheme_code": scheme["scheme_code"],
+                            "nav": round(nav, 4),
+                            "value": round(value, 2),
+                        }
+                    )
 
                     total_value += value
 
@@ -58,7 +66,7 @@ class UpdateHourlyPortfolio:
                     "user_id": user_id,
                     "timestamp": datetime.now(timezone.utc).isoformat(),
                     "total_value": round(total_value, 2),
-                    "investments": investments
+                    "investments": investments,
                 }
 
                 # Insert hourly snapshot
@@ -67,9 +75,8 @@ class UpdateHourlyPortfolio:
         except Exception as e:
             logger.error(f"{str(e)}")
 
+
 @celery_app.task
 def my_hourly_function():
     print(f"✅ Running task at {datetime.utcnow()}")
     UpdateHourlyPortfolio().update_funds()
-
-

@@ -4,14 +4,16 @@ from fastapi.middleware.cors import CORSMiddleware
 from scripts.constants import AppSpec
 from scripts.core.engine.background_task import update_mutual_fund_family
 from scripts.services import router
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends
 from starlette.middleware.sessions import SessionMiddleware
 
 
 from scripts.services.frontend_router import frontend_router
 from scripts.services.mutual_fund_broker_services import fund_router
 from scripts.services.user_service import user_router
+from scripts.utils.security_utils.decorators import CookieAuthentication
 
+auth = CookieAuthentication()
 app = FastAPI(
     title=AppSpec.name,
     description=AppSpec.description,
@@ -27,7 +29,9 @@ app.add_middleware(
     session_cookie="session_cookie",
 )
 
-if os.environ.get("ENABLE_CORS") in (True, "true", "True") and os.environ.get("CORS_URLS"):
+if os.environ.get("ENABLE_CORS") in (True, "true", "True") and os.environ.get(
+    "CORS_URLS"
+):
     app.add_middleware(
         CORSMiddleware,
         allow_origins=os.environ.get("CORS_URLS").split(","),
@@ -36,14 +40,19 @@ if os.environ.get("ENABLE_CORS") in (True, "true", "True") and os.environ.get("C
         allow_headers=["*"],
     )
 
+secure_access = os.environ.get("SECURE_ACCESS", default=False)
 app.include_router(router)
 app.include_router(user_router)
 app.include_router(frontend_router)
-app.include_router(fund_router)
+if secure_access in [True, "true", "True"]:
+    app.include_router(fund_router, dependencies=[Depends(auth)])
+else:
+    app.include_router(fund_router)
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
+
 
 @app.on_event("startup")
 async def startup_event():
     # Run once immediately
-    update_mutual_fund_family()
+    await update_mutual_fund_family()

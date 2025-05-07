@@ -6,6 +6,7 @@ from scripts.db.mongo.user_meta_store.unique_id import UniqueId, UniqueIdSchema
 
 from scripts.db.redis_connection import login_db
 from scripts.utils.security_utils.jwt_util import JWT
+
 jwt = JWT()
 
 
@@ -13,18 +14,20 @@ class CommonUtils(CommonKeys):
     def __init__(self):
         self.unique_con = UniqueId(mongo_client)
 
-    def get_next_id(self, _param):
+    async def get_next_id(self, _param):
         my_dict = UniqueIdSchema(key=_param)
-        my_doc = self.unique_con.find_one_record(key=_param)
+        my_doc = await self.unique_con.find_one_record(key=_param)
         if not my_doc.id:
             my_dict.id = "100"
-            return self.unique_con.insert_record(my_dict)
+            return await self.unique_con.insert_record(my_dict)
         else:
             count_value = str(int(my_doc.id) + 1)
             my_dict.id = count_value
-            return self.unique_con.update_record(my_dict)
+            return await self.unique_con.update_record(my_dict)
 
-    def create_token(self, user_id, ip, age=Secrets.LOCK_OUT_TIME_MINS, login_token=None):
+    def create_token(
+        self, user_id, ip, age=Secrets.LOCK_OUT_TIME_MINS, login_token=None
+    ):
         """
         This method is to create a cookie
         """

@@ -22,7 +22,9 @@ def validate_password_strength(password):
 
         password_validation_status = all(conditions)
     except Exception as e:
-        logger.error(f"Error occurred while validating the password strength : {str(e)}")
+        logger.error(
+            f"Error occurred while validating the password strength : {str(e)}"
+        )
         password_validation_status = False
 
     return password_validation_status

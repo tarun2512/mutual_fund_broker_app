@@ -35,8 +35,12 @@ class _PathToStorage(BaseSettings):
 
     @root_validator(allow_reuse=True)
     def assign_values(cls, values):
-        values["LOGS_MODULE_PATH"] = os.path.join(values.get("BASE_PATH"), "logs", values.get("MOUNT_DIR"))
-        values["MODULE_PATH"] = os.path.join(values.get("BASE_PATH"), values.get("MOUNT_DIR"))
+        values["LOGS_MODULE_PATH"] = os.path.join(
+            values.get("BASE_PATH"), "logs", values.get("MOUNT_DIR")
+        )
+        values["MODULE_PATH"] = os.path.join(
+            values.get("BASE_PATH"), values.get("MOUNT_DIR")
+        )
         return values
 
     @root_validator(allow_reuse=True)
@@ -57,13 +61,19 @@ class _KeyPath(BaseSettings):
 
     @root_validator(allow_reuse=True)
     def assign_values(cls, values):
-        if not os.path.isfile(os.path.join(values.get("KEYS_PATH"), "public")) or not os.path.isfile(
-            os.path.join(values.get("KEYS_PATH"), "private")
-        ):
+        if not os.path.isfile(
+            os.path.join(values.get("KEYS_PATH"), "public")
+        ) or not os.path.isfile(os.path.join(values.get("KEYS_PATH"), "private")):
             if not os.path.exists(values.get("KEYS_PATH")):
                 os.makedirs(values.get("KEYS_PATH"))
-            shutil.copy(os.path.join("assets", "keys", "public"), os.path.join(values.get("KEYS_PATH"), "public"))
-            shutil.copy(os.path.join("assets", "keys", "private"), os.path.join(values.get("KEYS_PATH"), "private"))
+            shutil.copy(
+                os.path.join("assets", "keys", "public"),
+                os.path.join(values.get("KEYS_PATH"), "public"),
+            )
+            shutil.copy(
+                os.path.join("assets", "keys", "private"),
+                os.path.join(values.get("KEYS_PATH"), "private"),
+            )
         values["PUBLIC"] = os.path.join(values.get("KEYS_PATH"), "public")
         values["PRIVATE"] = os.path.join(values.get("KEYS_PATH"), "private")
         return values
@@ -84,6 +94,7 @@ class _Databases(BaseSettings):
             sys.exit(1)
         return values
 
+
 class _Security(BaseSettings):
     SECURE_COOKIE: bool = Field(default=True) in ["True", "true", True]
     COOKIE_MAX_AGE_IN_MINS: int = Field(default=60)
@@ -100,11 +111,4 @@ KeyPath = _KeyPath()
 DBConf = _Databases()
 Security = _Security()
 
-__all__ = [
-    "PROJECT_NAME",
-    "Service",
-    "PathToStorage",
-    "KeyPath",
-    "DBConf",
-    "Security"
-]
+__all__ = ["PROJECT_NAME", "Service", "PathToStorage", "KeyPath", "DBConf", "Security"]

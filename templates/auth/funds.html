@@ -345,7 +345,7 @@ async function loadFunds() {
         const funds = await response.json();
 
 
-        if (!funds.date || funds.date === 0) {
+        if (!funds.data || funds.data === 0) {
             container.innerHTML = '<div class="alert alert-info">No funds found in your portfolio</div>';
             return;
         }

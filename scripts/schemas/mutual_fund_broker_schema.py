@@ -1,5 +1,6 @@
-from pydantic import BaseModel, EmailStr, constr, validator, Field
+from pydantic import BaseModel
 from typing import Optional
+
 
 class AddFunds(BaseModel):
     user_id: str
